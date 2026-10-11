@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NITRO FIGHTERS | NITRO NELLY</title>
+<style>
+  :root { --gold:#ffd166; --dark:#090909; --panel:#171717; --red:#ff4d5a; --blue:#4da3ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#29200a 0,#111 42%,#050505 100%); color:#fff; font-family:Arial,Helvetica,sans-serif; text-align:center; }
+  header { padding:20px 12px 8px; }
+  h1 { margin:0; color:var(--gold); letter-spacing:3px; font-size:clamp(27px,7vw,46px); text-shadow:0 0 15px #b88918; }
+  .tagline { color:#ddd; margin:8px 0 0; font-size:13px; letter-spacing:2px; }
+  main { width:min(950px,100%); margin:auto; padding:12px; }
+  .arena { position:relative; overflow:hidden; border:2px solid var(--gold); border-radius:16px; background:linear-gradient(#161d2c 0%,#34243a 55%,#171717 56%,#080808 100%); box-shadow:0 0 24px #9a741c44; }
+  .arena:before { content:""; position:absolute; left:0; right:0; top:56%; height:2px; background:#ffd16655; }
+  .skyline { position:absolute; inset:auto 0 44% 0; height:25%; opacity:.55; background:linear-gradient(90deg,transparent 0 4%,#0b0b12 4% 9%,transparent 9% 12%,#0b0b12 12% 20%,transparent 20% 24%,#0b0b12 24% 32%,transparent 32% 38%,#0b0b12 38% 46%,transparent 46% 51%,#0b0b12 51% 61%,transparent 61% 66%,#0b0b12 66% 76%,transparent 76% 81%,#0b0b12 81% 91%,transparent 91%); }
+  .hud { position:relative; z-index:2; display:flex; align-items:center; gap:10px; padding:12px; }
+  .player { flex:1; min-width:0; text-align:left; }
+  .player.right { text-align:right; }
+  .name { font-weight:900; font-size:13px; letter-spacing:1px; margin-bottom:6px; }
+  .health { height:15px; border:2px solid #fff; background:#292929; border-radius:20px; overflow:hidden; }
+  .fill { height:100%; width:100%; transition:width .2s; }
+  #health1 { background:linear-gradient(90deg,#ff334e,#ff8c5b); }
+  #health2 { background:linear-gradient(90deg,#2386ff,#65d5ff); }
+  .timer { color:var(--gold); font-size:25px; font-weight:900; min-width:42px; }
+  canvas { display:block; position:relative; z-index:1; width:100%; height:auto; touch-action:none; }
+  .message { min-height:26px; color:var(--gold); font-weight:800; padding:8px; }
+  .controls { display:flex; justify-content:space-between; gap:12px; margin-top:12px; }
+  .control-side { display:flex; gap:8px; flex-wrap:wrap; }
+  button { border:1px solid #d5a82d; background:linear-gradient(#292929,#101010); color:#fff; font-weight:800; border-radius:12px; min-width:58px; min-height:58px; padding:10px; font-size:14px; box-shadow:0 4px 0 #7d5b10; touch-action:manipulation; }
+  button:active { transform:translateY(3px); box-shadow:0 1px 0 #7d5b10; }
+  .attack { background:linear-gradient(#6b4b08,#211800); color:var(--gold); }
+  .restart { min-height:44px; margin:10px auto 0; }
+  .help { color:#c8c8c8; font-size:12px; line-height:1.7; margin:14px 4px; }
+  .credit { color:var(--gold); font-weight:800; letter-spacing:1px; padding:10px 4px 20px; font-size:13px; }
+  @media(max-width:430px) { .controls{gap:6px}.control-side{gap:5px}button{min-width:49px;min-height:54px;padding:7px;font-size:12px}.hud{padding:8px}.timer{font-size:21px}.name{font-size:11px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔ NITRO FIGHTERS ⚔</h1>
+  <p class="tagline">THE GOLDEN ARENA • FIGHT TO WIN</p>
+</header>
+<main>
+  <section class="arena" aria-label="Fighting game arena">
+    <div class="skyline"></div>
+    <div class="hud">
+      <div class="player"><div class="name">PLAYER 1</div><div class="health"><div id="health1" class="fill"></div></div></div>
+      <div class="timer" id="timer">60</div>
+      <div class="player right"><div class="name">PLAYER 2</div><div class="health"><div id="health2" class="fill"></div></div></div>
+    </div>
+    <canvas id="game" width="900" height="390" aria-label="Two fighters in the arena"></canvas>
+  </section>
+  <div class="message" id="message">Tap START FIGHT to begin!</div>
+  <button id="start" class="attack restart">▶ START FIGHT / RESTART</button>
+  <div class="controls">
+    <div class="control-side">
+      <button data-action="left" aria-label="Player 1 move left">◀ LEFT</button>
+      <button data-action="right" aria-label="Player 1 move right">RIGHT ▶</button>
+      <button data-action="jump" aria-label="Player 1 jump">⬆ JUMP</button>
+    </div>
+    <div class="control-side">
+      <button class="attack" data-action="punch" aria-label="Player 1 punch">👊 PUNCH</button>
+      <button class="attack" data-action="kick" aria-label="Player 1 kick">🦵 KICK</button>
+    </div>
+  </div>
+  <p class="help">PLAYER 1: use the buttons above. Keyboard: A/D to move, W to jump, F to punch, G to kick. PLAYER 2 is controlled by the computer. Land hits and protect your health bar!</p>
+  <div class="credit">CREATED BY NITRO NELLY 👑</div>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const h1 = document.getElementById('health1');
+  const h2 = document.getElementById('health2');
+  const timerEl = document.getElementById('timer');
+  const message = document.getElementById('message');
+  const startBtn = document.getElementById('start');
+  const ground = 320;
+  let running = false, timeLeft = 60, lastTick = 0, lastAI = 0, raf = 0;
+  const keys = new Set();
+  function fighter(x, color, accent, facing) {
+    return {x, y:ground, vx:0, vy:0, color, accent, facing, hp:100, attack:0, attackType:'', cooldown:0, jump:false, stun:0};
+  }
+  let p1, p2;
+  function reset() {
+    cancelAnimationFrame(raf);
+    p1 = fighter(240, '#f2bd42', '#fff0b3', 1);
+    p2 = fighter(660, '#287ed0', '#a9e0ff', -1);
+    timeLeft = 60; lastTick = performance.now(); lastAI = 0; running = true;
+    h1.style.width = h2.style.width = '100%';
+    timerEl.textContent = '60';
+    message.textContent = 'FIGHT! 👊';
+    raf = requestAnimationFrame(loop);
+  }
+  function drawFighter(p, label) {
+    const x=p.x, y=p.y, face=p.facing;
+    ctx.save();
+    ctx.translate(x,y);
+    // shadow
+    ctx.fillStyle='#0008'; ctx.beginPath(); ctx.ellipse(0,0,38,8,0,0,Math.PI*2); ctx.fill();
+    // legs
+    ctx.strokeStyle=p.color; ctx.lineWidth=17; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-10,-40); ctx.lineTo(-17,-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10,-40); ctx.lineTo(20,-10); ctx.stroke();
+    ctx.strokeStyle=p.accent; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(-17,-10); ctx.lineTo(-28,-8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(20,-10); ctx.lineTo(30,-8); ctx.stroke();
+    // torso
+    ctx.fillStyle=p.color; ctx.strokeStyle='#111'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.roundRect(-23,-91,46,55,10); ctx.fill(); ctx.stroke();
+    // belt
+    ctx.fillStyle='#111'; ctx.fillRect(-22,-49,44,8);
+    ctx.fillStyle='#ffd166'; ctx.fillRect(-4,-49,8,8);
+    // head
+    ctx.fillStyle='#c88755'; ctx.beginPath(); ctx.arc(0,-108,20,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // hair/headband
+    ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(0,-113,20,Math.PI,Math.PI*2); ctx.fill();
+    ctx.fillStyle=p.accent; ctx.fillRect(-19,-111,38,5);
+    // arms, attack extension
+    const extending = p.attack > 0 && p.attackType === 'punch';
+    ctx.strokeStyle=p.color; ctx.lineWidth=13;
+    ctx.beginPath(); ctx.moveTo(-18,-80); ctx.lineTo(-30,-58); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(18,-80);
+    ctx.lineTo(face*(extending?62:31), extending?-75:-57); ctx.stroke();
+    ctx.fillStyle=p.accent; ctx.beginPath(); ctx.arc(face*(extending?62:31),extending?-75:-57,8,0,Math.PI*2); ctx.fill();
+    if(p.attack>0 && p.attackType==='kick') {
+      ctx.strokeStyle=p.accent; ctx.lineWidth=12; ctx.beginPath(); ctx.moveTo(face*10,-38); ctx.lineTo(face*60,-28); ctx.stroke();
+    }
+    ctx.fillStyle='#fff'; ctx.font='bold 12px Arial'; ctx.textAlign='center'; ctx.fillText(label,0,22);
+    ctx.restore();
+  }
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // stars
+    for(let i=0;i<35;i++){ctx.fillStyle='#fff7';ctx.fillRect((i*137)%900,18+(i*43)%120,2,2);}
+    // floor
+    const grad=ctx.createLinearGradient(0,225,0,390); grad.addColorStop(0,'#28222d');grad.addColorStop(1,'#080808');
+    ctx.fillStyle=grad;ctx.fillRect(0,225,900,165);
+    ctx.strokeStyle='#ffd16655';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,225);ctx.lineTo(900,225);ctx.stroke();
+    for(let x=0;x<900;x+=60){ctx.strokeStyle='#ffffff0d';ctx.beginPath();ctx.moveTo(x,225);ctx.lineTo(x-70,390);ctx.stroke();}
+    drawFighter(p1,'P1'); drawFighter(p2,'CPU');
+  }
+  function attack(attacker, defender, type) {
+    if(!running || attacker.cooldown>0) return;
+    attacker.attack=type==='kick'?20:14; attacker.attackType=type; attacker.cooldown=type==='kick'?36:25;
+    const distance=Math.abs(attacker.x-defender.x);
+    if(distance<112 && Math.abs(attacker.y-defender.y)<60) {
+      const damage=type==='kick'?13:9;
+      defender.hp=Math.max(0,defender.hp-damage);
+      defender.stun=9;
+      defender.x += attacker.facing* (type==='kick'?23:14);
+      (attacker===p1?h2:h1).style.width=defender.hp+'%';
+      message.textContent=attacker===p1?(type==='kick'?'POWER KICK! 🦵':'NICE PUNCH! 👊'):'CPU landed a hit!';
+      if(defender.hp<=0) finish(attacker===p1?'🏆 YOU WIN!':'💥 CPU WINS THIS ROUND!');
+    }
+  }
+  function finish(text) { running=false; message.textContent=text+' — Tap restart to play again.'; }
+  function loop(now) {
+    if(!running) { draw(); return; }
+    const dt=Math.min(50,now-lastTick); lastTick=now;
+    if(now-lastAI>560) {
+      lastAI=now;
+      if(Math.abs(p2.x-p1.x)<125) attack(p2,p1,Math.random()<.55?'punch':'kick');
+      else p2.vx=p2.x>p1.x?-1.6:1.6;
+    }
+    // player movement
+    if(keys.has('left')) p1.vx=-3.5;
+    else if(keys.has('right')) p1.vx=3.5;
+    else p1.vx*=.72;
+    if(p1.stun>0) p1.stun--;
+    if(p2.stun>0) p2.stun--;
+    p1.x=Math.max(38,Math.min(862,p1.x+p1.vx));
+    p2.x=Math.max(38,Math.min(862,p2.x+p2.vx));
+    if(p1.y<ground || p1.vy<0){p1.vy+=.65;p1.y+=p1.vy;if(p1.y>=ground){p1.y=ground;p1.vy=0;p1.jump=false;}}
+    if(p2.y<ground || p2.vy<0){p2.vy+=.65;p2.y+=p2.vy;if(p2.y>=ground){p2.y=ground;p2.vy=0;p2.jump=false;}}
+    p1.facing=p1.x<p2.x?1:-1; p2.facing=p2.x<p1.x?1:-1;
+    for(const p of [p1,p2]){if(p.attack>0)p.attack--;if(p.cooldown>0)p.cooldown--;}
+    if(now-(window.lastSecond||now)>=1000){window.lastSecond=now;timeLeft--;timerEl.textContent=timeLeft;if(timeLeft<=0){finish(p1.hp===p2.hp?'🤝 DRAW!':p1.hp>p2.hp?'🏆 YOU WIN ON HEALTH!':'CPU WINS ON HEALTH!');}}
+    draw();
+    if(running) raf=requestAnimationFrame(loop);
+  }
+  function act(action) {
+    if(!running) return;
+    if(action==='left'||action==='right'){keys.add(action);return;}
+    if(action==='jump'&&!p1.jump){p1.vy=-12;p1.jump=true;}
+    if(action==='punch')attack(p1,p2,'punch');
+    if(action==='kick')attack(p1,p2,'kick');
+  }
+  document.querySelectorAll('[data-action]').forEach(btn=>{
+    const action=btn.dataset.action;
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();act(action);});
+    btn.addEventListener('pointerup',()=>keys.delete(action));
+    btn.addEventListener('pointerleave',()=>keys.delete(action));
+    btn.addEventListener('pointercancel',()=>keys.delete(action));
+  });
+  window.addEventListener('keydown',e=>{
+    const map={a:'left',d:'right',w:'jump',f:'punch',g:'kick'};
+    const action=map[e.key.toLowerCase()];
+    if(action){e.preventDefault();if(action==='left'||action==='right')keys.add(action);else act(action);}
+  });
+  window.addEventListener('keyup',e=>{const map={a:'left',d:'right'};if(map[e.key.toLowerCase()])keys.delete(map[e.key.toLowerCase()]);});
+  startBtn.addEventListener('click',reset);
+  p1=fighter(240,'#f2bd42','#fff0b3',1);p2=fighter(660,'#287ed0','#a9e0ff',-1);draw();
+})();
+</script>
+</body>
+</html>
