@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#080808">
+<title>NITRO FIGHTERS</title>
+<style>
+:root{--gold:#f5c451;--gold2:#a97616;--bg:#080808;--panel:#151515;--red:#ff4b55;--blue:#57c7ff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#272014 0%,#080808 62%);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:12px}
+.game{width:min(100%,900px);border:1px solid #77591d;border-radius:20px;overflow:hidden;background:#0b0b0b;box-shadow:0 0 28px #d49b2420}
+header{text-align:center;padding:16px 10px 12px;background:linear-gradient(180deg,#1b160b,#0b0b0b);border-bottom:1px solid #493714}
+h1{margin:0;color:var(--gold);font-size:clamp(25px,6vw,42px);letter-spacing:3px;text-shadow:0 0 16px #f5c45140}
+.sub{font-size:11px;letter-spacing:3px;color:#c7b47e;margin-top:3px}
+.hud{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+.fighter-name{font-size:12px;font-weight:900;letter-spacing:1.5px;margin-bottom:6px}
+.right{text-align:right}
+.bar{height:15px;background:#342c20;border:1px solid #6c5426;border-radius:30px;overflow:hidden}
+.health{height:100%;width:100%;transition:width .2s;background:linear-gradient(90deg,#c18a1d,#ffe28a)}
+.right .health{margin-left:auto;background:linear-gradient(90deg,#ff9d50,#ff4b55)}
+.status{display:flex;justify-content:space-between;padding:0 14px 8px;color:#bdb3a0;font-size:11px}
+.arena{position:relative;margin:0 12px;height:clamp(230px,48vw,390px);border:1px solid #5e471c;border-radius:12px;overflow:hidden;background:linear-gradient(#10141c 0%,#17100c 64%,#3a260d 65%,#0a0907 100%)}
+.arena:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 48px,#e8b9490b 49px 50px),linear-gradient(180deg,transparent 60%,#f3c45412 61%,transparent 63%)}
+.sun{position:absolute;width:110px;height:110px;border-radius:50%;background:#d7a63a20;box-shadow:0 0 60px #e5b84c20;top:16%;left:calc(50% - 55px)}
+.floor{position:absolute;bottom:0;height:36%;width:100%;background:repeating-linear-gradient(90deg,#17110a 0 32px,#241a0b 33px 35px);border-top:2px solid #6d4d17;transform:perspective(150px) rotateX(5deg);transform-origin:bottom}
+.fighter{position:absolute;bottom:22%;width:74px;height:140px;transition:left .09s linear;filter:drop-shadow(0 5px 5px #000);z-index:2}
+.fighter .head{position:absolute;top:0;left:24px;width:28px;height:29px;border-radius:45% 45% 40% 40%;background:#e6b780;border:3px solid #16120c}
+.fighter .hair{position:absolute;top:-3px;left:22px;width:31px;height:13px;border-radius:50% 50% 15% 15%;background:#191919}
+.fighter .body{position:absolute;top:29px;left:16px;width:44px;height:52px;border-radius:12px 12px 7px 7px;background:linear-gradient(90deg,#8a651b,var(--gold),#8a651b);border:3px solid #17120a}
+.fighter.enemy .body{background:linear-gradient(90deg,#74252b,#f14a52,#74252b)}
+.arm{position:absolute;top:34px;width:16px;height:45px;border-radius:10px;background:#d9a574;border:3px solid #17120a;transform-origin:top center}
+.arm.a1{left:7px;transform:rotate(20deg)}.arm.a2{left:51px;transform:rotate(-22deg)}
+.leg{position:absolute;top:75px;width:18px;height:53px;border-radius:8px;background:#282828;border:3px solid #080808;transform-origin:top center}
+.leg.l1{left:18px;transform:rotate(8deg)}.leg.l2{left:41px;transform:rotate(-8deg)}
+.fighter.enemy .body{border-color:#23090b}.fighter.enemy .leg{background:#351315}
+.fighter.punch .arm.a2{transform:rotate(-95deg);height:53px}.fighter.kick .leg.l2{transform:rotate(-70deg);height:65px}
+.fighter.enemy.punch .arm.a1{transform:rotate(95deg)}
+.fighter.hit{filter:brightness(1.8) drop-shadow(0 0 10px #fff)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+.control-side{display:flex;gap:8px;justify-content:center;align-items:center}
+button{font:inherit;touch-action:manipulation;cursor:pointer;user-select:none;-webkit-user-select:none}
+.ctrl{flex:1;min-height:58px;border-radius:13px;border:1px solid #8a681f;background:linear-gradient(180deg,#30240d,#171108);color:var(--gold);font-weight:900;font-size:14px;box-shadow:inset 0 1px #ffffff12}
+.ctrl:active{transform:scale(.97);background:#594114}
+.ctrl.secondary{border-color:#6d3030;color:#ff8a8f;background:linear-gradient(180deg,#301416,#160a0b)}
+.footer{display:flex;gap:8px;justify-content:center;padding:0 12px 14px;flex-wrap:wrap}
+.smallbtn{padding:9px 14px;border:1px solid #55431f;border-radius:20px;color:#e8d5a3;background:#17130c;font-size:12px}
+.message{min-height:22px;text-align:center;color:var(--gold);font-weight:800;letter-spacing:1px;font-size:13px;padding:0 8px 9px}
+.overlay{position:absolute;inset:0;background:#000b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:5}
+.overlay h2{margin:0 0 8px;color:var(--gold);font-size:clamp(26px,7vw,42px);letter-spacing:2px}
+.overlay p{margin:0 0 16px;color:#eee;max-width:350px}
+.overlay button{padding:12px 22px;border:0;border-radius:24px;background:var(--gold);color:#171006;font-weight:1000}
+.hidden{display:none!important}
+.hint{text-align:center;color:#a89a7d;font-size:11px;padding:0 12px 14px}
+@media(max-width:430px){body{padding:6px}.game{border-radius:14px}.hud{gap:8px;padding:10px}.fighter{transform:scale(.9);transform-origin:bottom center}.ctrl{min-height:54px;font-size:12px}.controls{gap:8px;padding:10px}.arena{margin:0 8px}}
+</style>
+</head>
+<body>
+<main class="game">
+<header><h1>NITRO FIGHTERS</h1><div class="sub">BLACK • GOLD • ARENA</div></header>
+<section class="hud">
+ <div><div class="fighter-name">NITRO NELLY</div><div class="bar"><div class="health" id="pHealth"></div></div></div>
+ <div class="right"><div class="fighter-name">SHADOW BOT</div><div class="bar"><div class="health" id="eHealth"></div></div></div>
+</section>
+<div class="status"><span id="round">ROUND 1</span><span id="score">WINS 0 : 0</span></div>
+<section class="arena" id="arena" aria-label="Fighting arena">
+ <div class="sun"></div><div class="floor"></div>
+ <div class="fighter player" id="player" style="left:14%">
+  <div class="hair"></div><div class="head"></div><div class="body"></div><div class="arm a1"></div><div class="arm a2"></div><div class="leg l1"></div><div class="leg l2"></div>
+ </div>
+ <div class="fighter enemy" id="enemy" style="left:72%">
+  <div class="hair"></div><div class="head"></div><div class="body"></div><div class="arm a1"></div><div class="arm a2"></div><div class="leg l1"></div><div class="leg l2"></div>
+ </div>
+ <div class="overlay" id="overlay"><h2>NITRO FIGHTERS</h2><p>Tap START to enter the arena. Use punch and kick buttons to win the round!</p><button id="start">START FIGHT</button></div>
+</section>
+<div class="message" id="message">READY TO FIGHT?</div>
+<section class="controls">
+ <div class="control-side"><button class="ctrl" id="punch">👊 PUNCH</button><button class="ctrl" id="kick">🦵 KICK</button></div>
+ <div class="control-side"><button class="ctrl secondary" id="block">🛡️ BLOCK</button><button class="ctrl secondary" id="special">⚡ SPECIAL</button></div>
+</section>
+<div class="footer"><button class="smallbtn" id="reset">↻ RESTART</button><button class="smallbtn" id="sound">🔊 SOUND: ON</button></div>
+<div class="hint">Touch controls • Works on mobile • No downloads needed</div>
+</main>
+<script>
+(() => {
+ const $=id=>document.getElementById(id);
+ const player=$('player'), enemy=$('enemy'), arena=$('arena');
+ let p=100,e=100,active=false,blocking=false,pWins=0,eWins=0,round=1,soundOn=true,enemyTimer=null,audioCtx=null;
+ function say(t){$('message').textContent=t}
+ function bars(){$('pHealth').style.width=Math.max(0,p)+'%';$('eHealth').style.width=Math.max(0,e)+'%';$('score').textContent=`WINS ${pWins} : ${eWins}`;$('round').textContent='ROUND '+round}
+ function beep(freq=300,dur=.07){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;g.gain.value=.035;o.start();o.stop(audioCtx.currentTime+dur)}catch(_){}}
+ function resetPositions(){player.style.left='14%';enemy.style.left='72%';player.className='fighter player';enemy.className='fighter enemy'}
+ function start(){clearInterval(enemyTimer);p=100;e=100;active=true;blocking=false;resetPositions();bars();$('overlay').classList.add('hidden');say('FIGHT!');beep(520,.13);enemyTimer=setInterval(botMove,900)}
+ function animate(el,cls){el.classList.remove('punch','kick','hit');void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),230)}
+ function attack(type){if(!active)return;let pp=parseFloat(player.style.left),ep=parseFloat(enemy.style.left);let close=Math.abs(ep-pp)<25;
+  animate(player,type);beep(type==='kick'?220:360,.08);
+  if(close){let dmg=type==='kick'?18:12;e=Math.max(0,e-dmg);animate(enemy,'hit');say(type==='kick'?'SOLID KICK!':'NICE PUNCH!');beep(180,.1)}else{say('MOVE CLOSER TO HIT!')}
+  bars();checkEnd()
+ }
+ function botMove(){if(!active)return;let pp=parseFloat(player.style.left),ep=parseFloat(enemy.style.left);
+  if(ep-pp>22)enemy.style.left=Math.max(pp+18,ep-5)+'%';
+  else if(Math.random()<.7){if(blocking){say('BLOCKED!');beep(440)}else{p=Math.max(0,p-(Math.random()<.45?10:6));animate(player,'hit');say('SHADOW BOT ATTACKS!');beep(150)}}
+  bars();checkEnd()
+ }
+ function checkEnd(){if(p<=0||e<=0){active=false;clearInterval(enemyTimer);let won=e<=0;pWins+=won?1:0;eWins+=won?0:1;bars();$('overlay').classList.remove('hidden');$('overlay').innerHTML=`<h2>${won?'YOU WIN! 🏆':'ROUND LOST'}</h2><p>${won?'Nitro Nelly takes the round!':'Shadow Bot wins this round. Try again!'}</p><button id="next">PLAY AGAIN</button>`;$('next').addEventListener('click',()=>{round++;start();$('overlay').innerHTML='<h2>NITRO FIGHTERS</h2><p>Tap START to enter the arena. Use punch and kick buttons to win the round!</p><button id="start">START FIGHT</button>';/* overlay remains hidden during fight */});}
+ }
+ $('start').addEventListener('click',start);
+ $('punch').addEventListener('click',()=>attack('punch'));
+ $('kick').addEventListener('click',()=>attack('kick'));
+ $('block').addEventListener('pointerdown',()=>{blocking=true;say('BLOCKING!')});
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('block').addEventListener(ev,()=>blocking=false));
+ $('special').addEventListener('click',()=>{if(!active)return;let ep=parseFloat(enemy.style.left),pp=parseFloat(player.style.left);animate(player,'kick');if(Math.abs(ep-pp)<30){e=Math.max(0,e-28);animate(enemy,'hit');say('NITRO SPECIAL! ⚡');beep(660,.18)}else say('GET CLOSER FOR SPECIAL!');bars();checkEnd()});
+ $('reset').addEventListener('click',()=>{clearInterval(enemyTimer);pWins=0;eWins=0;round=1;$('overlay').classList.remove('hidden');$('overlay').innerHTML='<h2>NITRO FIGHTERS</h2><p>Tap START to enter the arena. Use punch and kick buttons to win the round!</p><button id="start">START FIGHT</button>';$('start').addEventListener('click',start);p=100;e=100;active=false;resetPositions();bars();say('READY TO FIGHT?')});
+ $('sound').addEventListener('click',()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'🔊 SOUND: ON':'🔇 SOUND: OFF';beep(400)});
+})();
+</script>
+</body>
+</html>
